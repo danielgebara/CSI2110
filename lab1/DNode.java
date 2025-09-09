@@ -10,18 +10,20 @@ package lab1;
 
  public class DNode {
     private Object element;
-    private Node next;
-    private Node prev;
-    DNode() { this(null, null,null); }
-      DNode(Object e, Node n, Node p) {
+    private DNode next;
+    private DNode prev;
+    DNode() { 
+        this(null, null,null); 
+    }
+      DNode(Object e, DNode n, DNode p) {
       element = e;
       next = n;
       prev = p;
     }
     public void setElement(Object newElem) { element = newElem; }
-    public void setNext(Node newNext) { next = newNext; }
-    public void setPrev(Node newPrev) { prev = newPrev; }
+    public void setNext(DNode newNext) { next = newNext; }
+    public void setPrev(DNode newPrev) { prev = newPrev; }
     public Object getElement() { return element; }
-    public Node getNext() { return next; }
-    public Node getPrev() { return prev; }
+    public DNode getNext() { return next; }
+    public DNode getPrev() { return prev; }
   }
