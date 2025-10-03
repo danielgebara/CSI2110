@@ -1,7 +1,6 @@
 package lab3;
 
 
-
 //import net.datastructures.*; //copied LinkedPositionalList from net.datastructures.*
 
 /**
@@ -24,13 +23,15 @@ public class LinkedSequence<E> extends LinkedPositionalList<E> implements Sequen
 	 * @return position of the element or null if index does not exist
 	 * @throws IndexOutOfBoundsException if the index is negative or greater than size()-1
 	 */
-         public Position<E> positionAtIndex(int i) throws IndexOutOfBoundsException { 
-                 checkIndex(i,size()); // checks whether the given index is in the range [0, size()-1].
-
-                 /******* add your code here **********/
-
-                 return null; //dummy return
-          } 
+     public Position<E> positionAtIndex(int i) throws IndexOutOfBoundsException {
+         checkIndex(i,size()); // checks whether the given index is in the range [0, size()-1].
+		 Position<E> currentElement = first();
+		 while (i > 0) {
+			currentElement = after(currentElement);
+			i--;
+		 }
+		 return currentElement;
+	 }
 	
       /**
         * returns index corresponding to position
@@ -40,9 +41,16 @@ public class LinkedSequence<E> extends LinkedPositionalList<E> implements Sequen
         * 
         */
 	public int indexAtPosition(Position<E> pos) {
-		
-                  /******* add your code here **********/
-		 return 0; //dummy return
+		Position<E> currentElement = first();
+		int index = 0;
+		while (currentElement != null) {
+			if (currentElement == pos) {
+				return index;
+			}
+			index++;
+			currentElement = after(currentElement);
+		}
+		return -1;
 	} 
 
        /**
@@ -52,9 +60,8 @@ public class LinkedSequence<E> extends LinkedPositionalList<E> implements Sequen
          * @throws IndexOutOfBoundsException if the index is negative or greater than size()-1
 	 */
 	public E get(int i) throws IndexOutOfBoundsException { // gets element at index i
-		
-                 /******* add your code here **********/
-		 return null;
+		Position<E> currentElement = positionAtIndex(i);
+		return currentElement.getElement();
 	}
 	
 	/**
@@ -65,9 +72,10 @@ public class LinkedSequence<E> extends LinkedPositionalList<E> implements Sequen
 	  * @throws IndexOutOfBoundsException if the index is negative or greater than size()-1
 	  */
 	public E set(int i, E e) throws IndexOutOfBoundsException { // replaces the element at index i with e
-
-               /******* add your code here **********/
-               return null;
+		Position<E> currentElement = positionAtIndex(i);
+		E old_element = currentElement.getElement();
+		set(currentElement, e);
+		return old_element;
 	}
 	
 	/**
@@ -79,8 +87,13 @@ public class LinkedSequence<E> extends LinkedPositionalList<E> implements Sequen
 	  * @throws IndexOutOfBoundsException if the index is negative or greater than size()
 	  */
 	public void add(int i, E e){ // insert a new element which will have index i 
-		 /******* add your code here **********/
-   
+		if (i == 0) {
+			addFirst(e);
+		}
+		else {
+			Position<E> currentElement = positionAtIndex(i - 1);
+			addAfter(currentElement, e);
+		}
 	}
 	
 	/**
@@ -91,11 +104,7 @@ public class LinkedSequence<E> extends LinkedPositionalList<E> implements Sequen
 	  * @throws IndexOutOfBoundsException if the index is negative or greater than size()
 	  */
 	public E remove(int i) throws IndexOutOfBoundsException { // remove element with index i
-
-		/******* add your code here **********/
-
-                E el=null;    // dummy commands to be removed 
-                return el; // dummy commands to be removed
+		return remove(positionAtIndex(i));
 	}
 	
 	  // utility methods

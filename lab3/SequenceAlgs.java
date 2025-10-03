@@ -17,11 +17,16 @@ public class SequenceAlgs<E> {
 	 */
 	
 	public boolean isPalindrome (Sequence<E> S) {
-		
-		// ***** add your code here  *******************
-		
+		int left = 0;
+		int right = S.size() - 1;
+		while (left < right) {
+			if (S.get(left) != S.get(right)) {
+				return false;
+			}
+			left++;
+			right--;
+		}
 		return true;
- 		
 	}
 	
 	
@@ -36,10 +41,29 @@ public class SequenceAlgs<E> {
 	 */
 	
 	public void inplaceReverse(Sequence<E> S) {
-		
-		// ***** add your code here  *******************
-		
+		//inplaceReverse(S, 0, S.size() - 1);
+		int left = 0;
+		int right = S.size() - 1;
+		while (left < right) {
+			E temp = S.get(left);
+			S.set(left, S.get(right));
+			S.set(right, temp);
+			left++;
+			right--;
+		}
 	}
+
+//	private void inplaceReverse(Sequence<E> S, int start, int end) {
+//		if (start >= end) {
+//			return;
+//		}
+//		else {
+//			E temp = S.get(start);
+//			S.set(start, S.get(end));
+//			S.set(end, temp);
+//			inplaceReverse(S, start + 1, end - 1);
+//		}
+//	}
 	
 	/**
 	 * OPTIONAL CHALENGE:
