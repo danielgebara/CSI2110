@@ -7,100 +7,132 @@ import java.util.*;
 
 public class Main {
 
-    private static class Edge {
-        int to;
-        int cost;
+    // Edge for the subway graph 
+    private static class Edge implements Comparable<Edge> {
+        int u;  // endpoint 1 (index)
+        int v;  // endpoint 2 (index)
+        int w;  // cost
 
-        Edge(int to, int cost) {
-            this.to = to;
-            this.cost = cost;
+        Edge(int u, int v, int w) {
+            this.u = u;
+            this.v = v;
+            this.w = w;
+        }
+
+        @Override
+        public int compareTo(Edge other) {
+            return Integer.compare(this.w, other.w);
         }
     }
 
-    private static long primMST(List<List<Edge>> graph, int n) {
-        if (n == 0) return 0;
+    // Disjoint Set Union (Union-Find) with path compression + union by rank 
+    private static class DSU {
+        int[] parent;
+        int[] rank;
 
-        boolean[] inTree = new boolean[n];
-        PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a[0]));
-        long totalCost = 0;
-        int visited = 0;
-
-        // Start from vertex 0
-        inTree[0] = true;
-        visited++;
-        for (Edge e : graph.get(0)) {
-            pq.add(new int[]{e.cost, e.to});
+        DSU(int n) {
+            parent = new int[n];
+            rank = new int[n];
+            for (int i = 0; i < n; i++) {
+                parent[i] = i;
+                rank[i] = 0;
+            }
         }
 
-        while (!pq.isEmpty() && visited < n) {
-            int[] cur = pq.poll();
-            int w = cur[0];
-            int v = cur[1];
+        int find(int x) {
+            if (parent[x] != x) {
+                parent[x] = find(parent[x]); // path compression
+            }
+            return parent[x];
+        }
 
-            if (inTree[v]) continue;
+        boolean union(int a, int b) {
+            int ra = find(a);
+            int rb = find(b);
+            if (ra == rb) return false;
 
-            inTree[v] = true;
-            visited++;
-            totalCost += w;
+            if (rank[ra] < rank[rb]) {
+                parent[ra] = rb;
+            } else if (rank[ra] > rank[rb]) {
+                parent[rb] = ra;
+            } else {
+                parent[rb] = ra;
+                rank[ra]++;
+            }
+            return true;
+        }
+    }
 
-            for (Edge e : graph.get(v)) {
-                if (!inTree[e.to]) {
-                    pq.add(new int[]{e.cost, e.to});
+    // Returns MST cost using Kruskal; -1 if graph is disconnected. 
+    private static long kruskalMST(int n, List<Edge> edges) {
+        Collections.sort(edges);
+        DSU dsu = new DSU(n);
+
+        long totalCost = 0L;
+        int usedEdges = 0;
+
+        for (Edge e : edges) {
+            if (dsu.union(e.u, e.v)) {
+                totalCost += e.w;
+                usedEdges++;
+                if (usedEdges == n - 1) {
+                    break;
                 }
             }
         }
 
-        // If we didn't reach all vertices, MST is impossible
-        return (visited == n) ? totalCost : -1;
+        return (usedEdges == n - 1) ? totalCost : -1L;
     }
 
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
 
         while (in.hasNextInt()) {
-            int vertexCount = in.nextInt();
-            int edgeCount = in.nextInt();
-            if (vertexCount == 0 && edgeCount == 0) break;
+            int numStations = in.nextInt();
+            int numConnections = in.nextInt();
 
-            Map<String, Integer> nameToIndex = new HashMap<>();
-            for (int i = 0; i < vertexCount; i++) {
-                String city = in.next();
-                nameToIndex.put(city, i);
+            if (numStations == 0 && numConnections == 0) {
+                break; // end of input
             }
 
-            List<List<Edge>> graph = new ArrayList<>();
-            for (int i = 0; i < vertexCount; i++) {
-                graph.add(new ArrayList<>());
+            // Map station name -> index [0..numStations-1]
+            Map<String, Integer> idByName = new HashMap<>();
+            for (int i = 0; i < numStations; i++) {
+                String name = in.next();
+                idByName.put(name, i);
             }
 
-            for (int i = 0; i < edgeCount; i++) {
+            List<Edge> edges = new ArrayList<>();
+
+            for (int i = 0; i < numConnections; i++) {
                 String a = in.next();
                 String b = in.next();
                 int cost = in.nextInt();
 
-                Integer ia = nameToIndex.get(a);
-                Integer ib = nameToIndex.get(b);
+                Integer ia = idByName.get(a);
+                Integer ib = idByName.get(b);
                 if (ia != null && ib != null) {
-                    graph.get(ia).add(new Edge(ib, cost));
-                    graph.get(ib).add(new Edge(ia, cost));
+                    edges.add(new Edge(ia, ib, cost));
                 }
             }
 
-            String home = in.next();
-            if (!nameToIndex.containsKey(home)) {
+            // starting station (not needed for MST, but must be read)
+            String start = in.next();
+            if (!idByName.containsKey(start)) {
                 System.out.println("Impossible");
                 continue;
             }
 
-            long answer = primMST(graph, vertexCount);
-            if (answer < 0) {
+            long result = kruskalMST(numStations, edges);
+            if (result < 0) {
                 System.out.println("Impossible");
             } else {
-                System.out.println(answer);
+                System.out.println(result);
             }
         }
 
         in.close();
     }
 }
+
 
