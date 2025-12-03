@@ -1,71 +1,106 @@
 package ProgrammingAssignment2;
 
-// Expensive Subway (P2 - Part A)
-// Daniel Gebara, #300401006
-
 import java.util.*;
 
-class Main {
+// Main (P2 - Part A)
+// Daniel Gebara, #300401006
 
-    static class Edge implements Comparable<Edge> {
-        int u, v, w;
-        Edge(int u, int v, int w) { this.u = u; this.v = v; this.w = w; }
-        public int compareTo(Edge o) { return Integer.compare(this.w, o.w); }
+public class Main {
+
+    private static class Edge {
+        int to;
+        int cost;
+
+        Edge(int to, int cost) {
+            this.to = to;
+            this.cost = cost;
+        }
     }
 
-    static class DSU {
-        int[] p, r;
-        DSU(int n) {
-            p = new int[n];
-            r = new int[n];
-            for (int i = 0; i < n; i++) p[i] = i;
+    private static long primMST(List<List<Edge>> graph, int n) {
+        if (n == 0) return 0;
+
+        boolean[] inTree = new boolean[n];
+        PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a[0]));
+        long totalCost = 0;
+        int visited = 0;
+
+        // Start from vertex 0
+        inTree[0] = true;
+        visited++;
+        for (Edge e : graph.get(0)) {
+            pq.add(new int[]{e.cost, e.to});
         }
-        int find(int x) { return p[x] == x ? x : (p[x] = find(p[x])); }
-        boolean unite(int a, int b) {
-            int ra = find(a), rb = find(b);
-            if (ra == rb) return false;
-            if (r[ra] < r[rb]) p[ra] = rb;
-            else if (r[rb] < r[ra]) p[rb] = ra;
-            else { p[rb] = ra; r[ra]++; }
-            return true;
+
+        while (!pq.isEmpty() && visited < n) {
+            int[] cur = pq.poll();
+            int w = cur[0];
+            int v = cur[1];
+
+            if (inTree[v]) continue;
+
+            inTree[v] = true;
+            visited++;
+            totalCost += w;
+
+            for (Edge e : graph.get(v)) {
+                if (!inTree[e.to]) {
+                    pq.add(new int[]{e.cost, e.to});
+                }
+            }
         }
+
+        // If we didn't reach all vertices, MST is impossible
+        return (visited == n) ? totalCost : -1;
     }
 
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
+
         while (in.hasNextInt()) {
-            int nv = in.nextInt();
-            int ne = in.nextInt();
-            if (nv == 0 && ne == 0) break;
+            int vertexCount = in.nextInt();
+            int edgeCount = in.nextInt();
+            if (vertexCount == 0 && edgeCount == 0) break;
 
-            Map<String, Integer> id = new HashMap<>();
-            for (int i = 0; i < nv; i++) id.put(in.next(), i);
-
-            List<Edge> edges = new ArrayList<>();
-            for (int i = 0; i < ne; i++) {
-                String a = in.next(), b = in.next();
-                int w = in.nextInt();
-                Integer ia = id.get(a), ib = id.get(b);
-                if (ia != null && ib != null) edges.add(new Edge(ia, ib, w));
+            Map<String, Integer> nameToIndex = new HashMap<>();
+            for (int i = 0; i < vertexCount; i++) {
+                String city = in.next();
+                nameToIndex.put(city, i);
             }
 
-            String home = in.next(); // just need to know it exists
-            if (!id.containsKey(home)) { System.out.println("Impossible"); continue; }
+            List<List<Edge>> graph = new ArrayList<>();
+            for (int i = 0; i < vertexCount; i++) {
+                graph.add(new ArrayList<>());
+            }
 
-            Collections.sort(edges);
-            DSU dsu = new DSU(nv);
-            long total = 0;
-            int taken = 0;
-            for (Edge e : edges) {
-                if (dsu.unite(e.u, e.v)) {
-                    total += e.w;
-                    taken++;
-                    if (taken == nv - 1) break;
+            for (int i = 0; i < edgeCount; i++) {
+                String a = in.next();
+                String b = in.next();
+                int cost = in.nextInt();
+
+                Integer ia = nameToIndex.get(a);
+                Integer ib = nameToIndex.get(b);
+                if (ia != null && ib != null) {
+                    graph.get(ia).add(new Edge(ib, cost));
+                    graph.get(ib).add(new Edge(ia, cost));
                 }
             }
 
-            System.out.println(taken == nv - 1 ? total : "Impossible");
+            String home = in.next();
+            if (!nameToIndex.containsKey(home)) {
+                System.out.println("Impossible");
+                continue;
+            }
+
+            long answer = primMST(graph, vertexCount);
+            if (answer < 0) {
+                System.out.println("Impossible");
+            } else {
+                System.out.println(answer);
+            }
         }
+
         in.close();
     }
 }
+

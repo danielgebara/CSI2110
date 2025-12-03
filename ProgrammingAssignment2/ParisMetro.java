@@ -1,195 +1,279 @@
 package ProgrammingAssignment2;
 
+import java.util.*;
+
 // Paris (P2 - Part B)
 // Daniel Gebara, #300401006
 
-import java.util.*;
-
 public class ParisMetro {
 
-    static class Edge implements Comparable<Edge> {
-        int u, v, w;
-        Edge(int u, int v, int w) { this.u = u; this.v = v; this.w = w; }
-        public int compareTo(Edge o) { return Integer.compare(this.w, o.w); }
+    private static class Edge {
+        int from;
+        int to;
+        int weight;
+
+        Edge(int from, int to, int weight) {
+            this.from = from;
+            this.to = to;
+            this.weight = weight;
+        }
     }
 
-    static class DSU {
-        int[] p, r;
-        DSU(int n) { p = new int[n]; r = new int[n]; for (int i = 0; i < n; i++) p[i] = i; }
-        int find(int x) { return p[x] == x ? x : (p[x] = find(p[x])); }
-        boolean unite(int a, int b) {
-            int ra = find(a), rb = find(b);
+    private static class DSU {
+        int[] parent;
+        int[] rank;
+
+        DSU(int n) {
+            parent = new int[n];
+            rank = new int[n];
+            for (int i = 0; i < n; i++) {
+                parent[i] = i;
+            }
+        }
+
+        int find(int x) {
+            if (parent[x] != x) {
+                parent[x] = find(parent[x]);
+            }
+            return parent[x];
+        }
+
+        boolean union(int a, int b) {
+            int ra = find(a);
+            int rb = find(b);
             if (ra == rb) return false;
-            if (r[ra] < r[rb]) p[ra] = rb;
-            else if (r[rb] < r[ra]) p[rb] = ra;
-            else { p[rb] = ra; r[ra]++; }
+            if (rank[ra] < rank[rb]) {
+                parent[ra] = rb;
+            } else if (rank[rb] < rank[ra]) {
+                parent[rb] = ra;
+            } else {
+                parent[rb] = ra;
+                rank[ra]++;
+            }
             return true;
         }
     }
 
-    private static String pairKey(int a, int b) { return (a < b) ? a + "#" + b : b + "#" + a; }
-
-    public static void main(String[] args) {
-        solve();
+    private static String pairKey(int a, int b) {
+        return (a < b) ? a + "#" + b : b + "#" + a;
     }
 
-    private static void solve() {
+    public static void main(String[] args) {
+        ParisMetro app = new ParisMetro();
+        app.run();
+    }
+
+    private void run() {
         Scanner in = new Scanner(System.in);
-        if (!in.hasNextInt()) return;
+        if (!in.hasNextInt()) {
+            return;
+        }
 
-        int n = in.nextInt();
-        int m = in.nextInt();
+        int n = in.nextInt(); // number of vertices
+        int m = in.nextInt(); // number of edges
 
-        int[] num = new int[n];
-        String[] name = new String[n];
-        Map<Integer, Integer> idxByNum = new HashMap<>();
+        int[] stationNum = new int[n];
+        String[] stationName = new String[n];
+        Map<Integer, Integer> indexByNumber = new HashMap<>();
+
         for (int i = 0; i < n; i++) {
             int vnum = in.nextInt();
             String vname = in.nextLine().trim();
-            num[i] = vnum;
-            name[i] = vname;
-            idxByNum.put(vnum, i);
+            stationNum[i] = vnum;
+            stationName[i] = vname;
+            indexByNumber.put(vnum, i);
         }
 
-        if (in.hasNext()) in.next(); // consume "$"
+        // Consume "$"
+        if (in.hasNext()) {
+            in.next();
+        }
 
-        List<Edge> all = new ArrayList<>();
+        List<Edge> allEdges = new ArrayList<>();
         for (int i = 0; i < m; i++) {
             int a = in.nextInt();
             int b = in.nextInt();
             int w = in.nextInt();
-            Integer ia = idxByNum.get(a), ib = idxByNum.get(b);
-            if (ia != null && ib != null) all.add(new Edge(ia, ib, w));
+            Integer ia = indexByNumber.get(a);
+            Integer ib = indexByNumber.get(b);
+            if (ia != null && ib != null) {
+                allEdges.add(new Edge(ia, ib, w));
+            }
         }
 
-        // Hubs via -1 edges
-        DSU hubDsu = new DSU(n);
-        for (Edge e : all) if (e.w == -1) hubDsu.unite(e.u, e.v);
+        // Identify hub groups using -1 edges
+        DSU hubUF = new DSU(n);
+        for (Edge e : allEdges) {
+            if (e.weight == -1) {
+                hubUF.union(e.from, e.to);
+            }
+        }
 
-        // Component sizes
+        // Count size of each DSU component
         Map<Integer, Integer> compSize = new HashMap<>();
         for (int i = 0; i < n; i++) {
-            int r = hubDsu.find(i);
+            int r = hubUF.find(i);
             compSize.put(r, compSize.getOrDefault(r, 0) + 1);
         }
 
-        // Assign hub ids (size > 1)
+        // Assign hub IDs to components with size > 1
         int[] hubId = new int[n];
         Arrays.fill(hubId, -1);
+
         List<List<Integer>> hubMembers = new ArrayList<>();
         int hubVertexCount = 0;
+
         for (int i = 0; i < n; i++) {
-            int r = hubDsu.find(i);
-            if (compSize.get(r) > 1) {
-                if (hubId[r] == -1) {
-                    hubId[r] = hubMembers.size();
+            int root = hubUF.find(i);
+            int size = compSize.get(root);
+            if (size > 1) {
+                if (hubId[root] == -1) {
+                    hubId[root] = hubMembers.size();
                     hubMembers.add(new ArrayList<>());
                 }
-                int hid = hubId[r];
+                int hid = hubId[root];
                 hubId[i] = hid;
                 hubMembers.get(hid).add(i);
                 hubVertexCount++;
             }
         }
+
         int hubCount = hubMembers.size();
 
-        // Rep name per hub (first by station number)
         String[] hubName = new String[hubCount];
         for (int h = 0; h < hubCount; h++) {
-            List<Integer> mem = hubMembers.get(h);
-            mem.sort(Comparator.comparingInt(i -> num[i]));
-            hubName[h] = mem.isEmpty() ? "" : name[mem.get(0)];
+            List<Integer> members = hubMembers.get(h);
+            members.sort(Comparator.comparingInt(i -> stationNum[i]));
+            hubName[h] = members.isEmpty() ? "" : stationName[members.get(0)];
         }
 
-        // Positive edges adjacency
+        // Build adjacency of all vertices with positive-weight edges
         List<List<Edge>> adj = new ArrayList<>();
-        for (int i = 0; i < n; i++) adj.add(new ArrayList<>());
-        for (Edge e : all) if (e.w > 0) {
-            adj.get(e.u).add(new Edge(e.u, e.v, e.w));
-            adj.get(e.v).add(new Edge(e.v, e.u, e.w));
+        for (int i = 0; i < n; i++) {
+            adj.add(new ArrayList<>());
+        }
+        for (Edge e : allEdges) {
+            if (e.weight > 0) {
+                adj.get(e.from).add(new Edge(e.from, e.to, e.weight));
+                adj.get(e.to).add(new Edge(e.to, e.from, e.weight));
+            }
         }
 
-        boolean[] isHub = new boolean[n];
-        for (int i = 0; i < n; i++) isHub[i] = hubId[i] != -1;
+        boolean[] isHubVertex = new boolean[n];
+        for (int i = 0; i < n; i++) {
+            isHubVertex[i] = (hubId[i] != -1);
+        }
 
-        // non-hub components
+        // Find connected components of NON-hub vertices (using positive edges only)
         int[] comp = new int[n];
         Arrays.fill(comp, -1);
-        int compCnt = 0;
+        int compCount = 0;
+
         for (int i = 0; i < n; i++) {
-            if (isHub[i] || comp[i] != -1) continue;
+            if (isHubVertex[i] || comp[i] != -1) continue;
+
             Queue<Integer> q = new ArrayDeque<>();
-            q.add(i); comp[i] = compCnt;
+            q.add(i);
+            comp[i] = compCount;
+
             while (!q.isEmpty()) {
                 int u = q.poll();
                 for (Edge e : adj.get(u)) {
-                    int v = e.v;
-                    if (isHub[v]) continue;
-                    if (comp[v] == -1) { comp[v] = compCnt; q.add(v); }
+                    int v = e.to;
+                    if (isHubVertex[v]) continue;        // do not traverse into hubs
+                    if (comp[v] == -1) {
+                        comp[v] = compCount;
+                        q.add(v);
+                    }
                 }
             }
-            compCnt++;
+            compCount++;
         }
 
         List<List<Integer>> compNodes = new ArrayList<>();
-        for (int c = 0; c < compCnt; c++) compNodes.add(new ArrayList<>());
-        for (int i = 0; i < n; i++) if (comp[i] != -1) compNodes.get(comp[i]).add(i);
+        for (int c = 0; c < compCount; c++) {
+            compNodes.add(new ArrayList<>());
+        }
+        for (int i = 0; i < n; i++) {
+            if (comp[i] != -1) {
+                compNodes.get(comp[i]).add(i);
+            }
+        }
 
-        Map<String, Integer> best = new HashMap<>(); // min per hub pair
+        // Map of best cost per unordered hub pair
+        Map<String, Integer> bestSegment = new HashMap<>();
 
-        // direct hub-hub edges
-        for (Edge e : all) {
-            if (e.w > 0 && isHub[e.u] && isHub[e.v]) {
-                int ha = hubId[e.u], hb = hubId[e.v];
-                if (ha != hb) {
-                    String k = pairKey(ha, hb);
-                    int prev = best.getOrDefault(k, Integer.MAX_VALUE);
-                    if (e.w < prev) best.put(k, e.w);
+        // Direct hub-hub positive edges
+        for (Edge e : allEdges) {
+            if (e.weight > 0 && isHubVertex[e.from] && isHubVertex[e.to]) {
+                int ha = hubId[e.from];
+                int hb = hubId[e.to];
+                if (ha == hb) continue;
+                String key = pairKey(ha, hb);
+                int prev = bestSegment.getOrDefault(key, Integer.MAX_VALUE);
+                if (e.weight < prev) {
+                    bestSegment.put(key, e.weight);
                 }
             }
         }
 
-        // process each non-hub component
-        for (int c = 0; c < compCnt; c++) {
+        // For each non-hub component, compute best connection between hubs via that component
+        final int INF = 1_000_000_000;
+
+        for (int c = 0; c < compCount; c++) {
             List<Integer> nodes = compNodes.get(c);
             if (nodes.isEmpty()) continue;
 
-            Map<Integer, List<Edge>> cadj = new HashMap<>();
-            for (int u : nodes) cadj.put(u, new ArrayList<>());
-            for (int u : nodes) {
-                for (Edge e : adj.get(u)) {
-                    if (comp[e.v] == c) cadj.get(u).add(new Edge(u, e.v, e.w));
+            // Boundary entries: (hubId, componentNode, entryEdgeWeight)
+            class Boundary {
+                int hub;
+                int node;
+                int entryWeight;
+
+                Boundary(int hub, int node, int entryWeight) {
+                    this.hub = hub;
+                    this.node = node;
+                    this.entryWeight = entryWeight;
                 }
             }
 
-            List<int[]> boundary = new ArrayList<>(); // {hubId, compNode, entryW}
+            List<Boundary> boundaries = new ArrayList<>();
+
+            // Identify boundary edges: comp node -> hub vertex via positive edge
             for (int u : nodes) {
                 for (Edge e : adj.get(u)) {
-                    int v = e.v;
-                    if (isHub[v]) boundary.add(new int[]{hubId[v], u, e.w});
+                    int v = e.to;
+                    if (isHubVertex[v]) {
+                        int h = hubId[v];
+                        boundaries.add(new Boundary(h, u, e.weight));
+                    }
                 }
             }
-            if (boundary.size() < 2) continue;
 
-            final int INF = 1_000_000_000;
-            for (int i = 0; i < boundary.size(); i++) {
-                int hubA = boundary.get(i)[0];
-                int src = boundary.get(i)[1];
-                int entryA = boundary.get(i)[2];
+            if (boundaries.size() < 2) continue;
 
+            // Dijkstra inside this component for each boundary
+            for (int i = 0; i < boundaries.size(); i++) {
+                Boundary start = boundaries.get(i);
+
+                // Distance only over nodes in this component
                 Map<Integer, Integer> dist = new HashMap<>();
                 for (int u : nodes) dist.put(u, INF);
+                dist.put(start.node, 0);
+
                 PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a[0]));
-                dist.put(src, 0);
-                pq.add(new int[]{0, src});
+                pq.add(new int[]{0, start.node});
 
                 while (!pq.isEmpty()) {
                     int[] cur = pq.poll();
-                    int d = cur[0], u = cur[1];
+                    int d = cur[0];
+                    int u = cur[1];
                     if (d != dist.get(u)) continue;
-                    for (Edge e : cadj.get(u)) {
-                        int v = e.v;
-                        int nd = d + e.w;
+
+                    for (Edge e : adj.get(u)) {
+                        int v = e.to;
+                        if (comp[v] != c) continue; // stay inside this component
+                        int nd = d + e.weight;
                         if (nd < dist.get(v)) {
                             dist.put(v, nd);
                             pq.add(new int[]{nd, v});
@@ -197,70 +281,78 @@ public class ParisMetro {
                     }
                 }
 
-                for (int j = i + 1; j < boundary.size(); j++) {
-                    int hubB = boundary.get(j)[0];
-                    int tgt = boundary.get(j)[1];
-                    int entryB = boundary.get(j)[2];
-                    int inside = dist.getOrDefault(tgt, INF);
-                    if (inside >= INF) continue;
-                    int total = entryA + inside + entryB;
-                    if (hubA != hubB) {
-                        String k = pairKey(hubA, hubB);
-                        int prev = best.getOrDefault(k, Integer.MAX_VALUE);
-                        if (total < prev) best.put(k, total);
+                // Combine entry/exit via this component to connect two hubs
+                for (int j = i + 1; j < boundaries.size(); j++) {
+                    Boundary end = boundaries.get(j);
+                    if (start.hub == end.hub) continue;
+
+                    int inner = dist.getOrDefault(end.node, INF);
+                    if (inner >= INF) continue;
+
+                    int total = start.entryWeight + inner + end.entryWeight;
+                    String key = pairKey(start.hub, end.hub);
+                    int prev = bestSegment.getOrDefault(key, Integer.MAX_VALUE);
+                    if (total < prev) {
+                        bestSegment.put(key, total);
                     }
                 }
             }
         }
 
-        // compressed edges for MST; segment count = unique hub pairs
-        List<Edge> compEdges = new ArrayList<>();
-        for (Map.Entry<String, Integer> en : best.entrySet()) {
-            String[] p = en.getKey().split("#");
-            int a = Integer.parseInt(p[0]);
-            int b = Integer.parseInt(p[1]);
-            compEdges.add(new Edge(a, b, en.getValue()));
+        // Build compressed hub graph edges
+        List<Edge> compressedEdges = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : bestSegment.entrySet()) {
+            String[] parts = entry.getKey().split("#");
+            int ha = Integer.parseInt(parts[0]);
+            int hb = Integer.parseInt(parts[1]);
+            int w = entry.getValue();
+            compressedEdges.add(new Edge(ha, hb, w));
         }
-        int segmentCount = best.size();
+        int segmentCount = bestSegment.size();
 
-        // Kruskal MST
-        Collections.sort(compEdges);
-        DSU mst = new DSU(hubCount);
-        long total = 0;
-        int picked = 0;
-        List<Edge> mstEdges = new ArrayList<>();
-        for (Edge ce : compEdges) {
-            if (mst.unite(ce.u, ce.v)) {
-                total += ce.w;
-                picked++;
-                mstEdges.add(ce);
-                if (picked == hubCount - 1) break;
+        // Kruskal MST on hubs
+        compressedEdges.sort(Comparator.comparingInt(e -> e.weight));
+        DSU mstUF = new DSU(hubCount);
+
+        long totalCost = 0;
+        int chosen = 0;
+        List<Edge> chosenEdges = new ArrayList<>();
+
+        for (Edge e : compressedEdges) {
+            if (mstUF.union(e.from, e.to)) {
+                totalCost += e.weight;
+                chosen++;
+                chosenEdges.add(e);
+                if (chosen == hubCount - 1) break;
             }
         }
 
-        // Output
         System.out.println("Paris Metro Graph has " + n + " vertices and " + m + " edges.\n");
 
         System.out.print("Hub Stations = [ ");
         for (int h = 0; h < hubCount; h++) {
             System.out.print(hubName[h]);
-            if (h + 1 < hubCount) System.out.print(",  ");
+            if (h + 1 < hubCount) {
+                System.out.print(",  ");
+            }
         }
         System.out.println(" ]\n");
 
-        System.out.println("Number of Hub Stations = " + hubCount + " (total Hub Vertices = " + hubVertexCount + ")\n");
+        System.out.println("Number of Hub Stations = " + hubCount
+                + " (total Hub Vertices = " + hubVertexCount + ")\n");
         System.out.println("Number of Possible Segments = " + segmentCount + "\n");
 
-        if (picked != hubCount - 1) {
+        if (chosen != hubCount - 1) {
             System.out.println("Total Cost = Impossible");
             return;
         }
 
-        System.out.println("Total Cost = $" + total);
+        System.out.println("Total Cost = $" + totalCost);
         System.out.println("Segments to Buy:");
-        for (int i = 0; i < mstEdges.size(); i++) {
-            Edge e = mstEdges.get(i);
-            System.out.println((i + 1) + "( " + hubName[e.u] + " - " + hubName[e.v] + " ) - $" + e.w);
+        for (int i = 0; i < chosenEdges.size(); i++) {
+            Edge e = chosenEdges.get(i);
+            System.out.println((i + 1) + "( " + hubName[e.from] + " - " + hubName[e.to] + " ) - $" + e.weight);
         }
     }
 }
+
