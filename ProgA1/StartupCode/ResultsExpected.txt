@@ -1,0 +1,69 @@
+javac Huffman.java
+javac TestCompression.java
+java TestCompression
+---------------------------------------------------------
+
+Encoding testfiles/genes.txt testfiles/genes.huf
+Number of bytes in input : 13608
+Number of bytes in output: 3578
+
+Decoding testfiles/genes.huf testfiles/genesRecovered.txt
+Number of bytes in input : 3578
+Number of bytes in output: 13608
+
+Command Formats:
+E <inputfile> <outputfile>
+D <inputfile> <outputfile>
+T <testfile_with_commands>
+or type Q to quit
+
+Enter command > T tests.txt
+
+Encoding testfiles/genes.txt testfiles/genes.huf
+Number of bytes in input : 13608
+Number of bytes in output: 3578
+
+Decoding testfiles/genes.huf testfiles/genesRecover.txt
+Number of bytes in input : 3578
+Number of bytes in output: 13608
+
+Encoding testfiles/abcefString.txt testfiles/abcefString.huf
+Number of bytes in input : 5750
+Number of bytes in output: 1323
+
+Decoding testfiles/abcefString.huf testfiles/abcefStringRecover.txt
+Number of bytes in input : 1323
+Number of bytes in output: 5750
+
+Encoding testfiles/greeneggsandham.txt testfiles/greeneggsandham.huf
+Number of bytes in input : 43164
+Number of bytes in output: 23483
+
+Decoding testfiles/greeneggsandham.huf testfiles/greeneggsandhamRecover.txt
+Number of bytes in input : 23483
+Number of bytes in output: 43164
+
+Encoding testfiles/midsummer.txt testfiles/midsummer.huf
+Number of bytes in input : 102793
+Number of bytes in output: 58647
+
+Decoding testfiles/midsummer.huf testfiles/midsummerRecover.txt
+Number of bytes in input : 58647
+Number of bytes in output: 102793
+
+Encoding testfiles/don.jpg testfiles/don.huf
+Number of bytes in input : 19405
+Number of bytes in output: 19385
+
+Decoding testfiles/don.huf testfiles/donRecover.jpg
+Number of bytes in input : 19385
+Number of bytes in output: 19405
+Test file completed: testfiles/tests.txt
+
+Command Formats:
+E <inputfile> <outputfile>
+D <inputfile> <outputfile>
+T <testfile_with_commands>
+or type Q to quit
+
+Enter command >
